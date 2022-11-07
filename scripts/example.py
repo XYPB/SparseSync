@@ -58,6 +58,21 @@ def decode_single_video_prediction(off_logits, grid, item):
         print(f'p={off_probs[target_hat]:.4f} ({off_logits[target_hat]:.4f}), "{grid[target_hat]:.2f}" ({target_hat})')
     return off_probs
 
+def decode_single_video_best_prediction_clean(off_logits, grid, item):
+    off_probs = torch.softmax(off_logits, dim=-1)
+    k = min(off_probs.shape[-1], 5)
+    topk_logits, topk_preds = torch.topk(off_logits, k)
+    # remove batch dimension
+    assert len(topk_logits) == 1, 'batch is larger than 1'
+    topk_logits = topk_logits[0]
+    topk_preds = topk_preds[0]
+    off_logits = off_logits[0]
+    off_probs = off_probs[0]
+    target_hat = topk_preds[0]
+    best_prob = off_probs[target_hat]
+    best_shift = grid[target_hat]
+    return best_prob, best_shift
+
 def reconstruct_video_from_input(aud, vid, meta, orig_vid_path, v_start_i_sec, offset_sec, vfps, afps):
     # assumptions
     n_fft = 512
@@ -87,7 +102,7 @@ def reconstruct_video_from_input(aud, vid, meta, orig_vid_path, v_start_i_sec, o
     vis_folder.mkdir(exist_ok=True)
     save_vid_path = vis_folder / f'rec_{Path(orig_vid_path).stem}_off{offset_sec}_t{v_start_i_sec}.mp4'
     save_vid_path = str(save_vid_path)
-    print(f'Reconstructed video: {save_vid_path} (vid_crop starts at {v_start_i_sec}, offset {offset_sec})')
+    # print(f'Reconstructed video: {save_vid_path} (vid_crop starts at {v_start_i_sec}, offset {offset_sec})')
 
     # save the reconstructed input
     torchvision.io.write_video(save_vid_path, vid_rec, vfps, audio_array=aud_rec, audio_fps=afps, audio_codec='aac')

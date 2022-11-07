@@ -351,6 +351,18 @@ class TemporalCropAndOffsetRandomFeasible(TemporalCropAndOffset):
             else:
                 raise Exception(f'{how_much_out} {item["path"]}')
 
+        if aud.shape[0] < a_end_i:
+            target_shape = list(aud.shape)
+            target_shape[0] = a_end_i
+            pad_aud = torch.zeros(target_shape)
+            pad_aud[:aud.shape[0]] = aud
+            aud = pad_aud
+        if vid.shape[0] < v_end_i:
+            target_shape = list(vid.shape)
+            target_shape[0] = v_end_i
+            pad_vid = torch.zeros(target_shape)
+            pad_vid[:vid.shape[0]] = vid
+            vid = pad_vid
         assert v_start_i < v_end_i and a_start_i < a_end_i
         assert aud.shape[0] >= a_end_i, f'{aud.shape} {a_end_i} {item["path"]}'
         assert vid.shape[0] >= v_end_i, f'{vid.shape} {v_end_i} {item["path"]}'
