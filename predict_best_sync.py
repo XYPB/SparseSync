@@ -223,7 +223,7 @@ def predict_best_sync(exp_name, multiple_audio_path, vfps, afps, device, input_s
                 #     attach_audio_to_video(rgb.detach().permute(0,2,3,1).cpu().numpy(), wav.detach().cpu().numpy(), os.path.join(os.path.dirname(multiple_audio_path), Path(origin_path).stem + '_to_' + Path(cond_path).stem + f'_{idx}_{top_prob:.2f}_{top_shift:.2f}_sync.mp4'), FPS=vfps, SR=afps)
                 # break
             print(best_sync_idx)
-            attach_audio_to_video(origin_path, audios[best_sync_idx], os.path.join(os.path.dirname(multiple_audio_path), Path(origin_path).stem + '_to_' + Path(cond_path).stem + '.mp4'), SR=22050)
+            attach_audio_to_video(origin_path, audios[best_sync_idx], os.path.join(dest_dir, Path(origin_path).stem + '_to_' + Path(cond_path).stem + '.mp4'), SR=22050)
             # break
         # break
 
