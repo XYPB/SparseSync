@@ -167,6 +167,7 @@ def predict_best_sync(exp_name, multiple_audio_path, vfps, afps, device, input_s
         # load visual and audio streams
         # (Tv, 3, H, W) in [0, 225], (Ta, C) in [-1, 1]
         rgb, audio, meta = get_video_and_audio(origin_path_reencode, get_meta=True)
+        meta['video']['fps'] = [25,]
         resampler = torchaudio.transforms.Resample(22050, afps)
 
         for cond_path, audios in cond_group.items():
@@ -210,7 +211,6 @@ def predict_best_sync(exp_name, multiple_audio_path, vfps, afps, device, input_s
                 # forward pass
                 with torch.no_grad():
                     _, off_logits, attention = model(vid, aud, targets)
-
                 # simply prints the results of the prediction
                 top_prob, top_shift = decode_single_video_best_prediction_clean(off_logits, grid, item)
                 if abs(top_shift) <= args.tolerance and top_prob > cur_prob:
@@ -222,7 +222,7 @@ def predict_best_sync(exp_name, multiple_audio_path, vfps, afps, device, input_s
                 # if to_record:
                 #     attach_audio_to_video(rgb.detach().permute(0,2,3,1).cpu().numpy(), wav.detach().cpu().numpy(), os.path.join(os.path.dirname(multiple_audio_path), Path(origin_path).stem + '_to_' + Path(cond_path).stem + f'_{idx}_{top_prob:.2f}_{top_shift:.2f}_sync.mp4'), FPS=vfps, SR=afps)
                 # break
-            print(best_sync_idx)
+            # print(best_sync_idx)
             attach_audio_to_video(origin_path, audios[best_sync_idx], os.path.join(dest_dir, Path(origin_path).stem + '_to_' + Path(cond_path).stem + '.mp4'), SR=22050)
             # break
         # break
