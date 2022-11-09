@@ -229,8 +229,8 @@ def predict_best_sync(exp_name, multiple_audio_path, vfps, afps, device, input_s
                 # break
             # print(best_sync_idx)
             attach_audio_to_video(origin_path, audios[best_sync_idx], os.path.join(dest_dir, Path(origin_path).stem + '_to_' + Path(cond_path).stem + '.mp4'), SR=22050)
-            break
-        break
+            # break
+        # break
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-t', '--tolerance', type=float, default=1e-5)
