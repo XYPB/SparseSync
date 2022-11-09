@@ -149,19 +149,14 @@ def predict_best_sync(exp_name, multiple_audio_path, vfps, afps, device, input_s
     pbar = tqdm(generated_audios.items(), total=len(generated_audios))
     for origin_path, cond_group in pbar:
         # checking if the provided video has the correct frame rates
-        # print(f'Using video: {origin_path}')
         v, a, vid_meta = torchvision.io.read_video(origin_path, pts_unit='sec')
         T, H, W, C = v.shape
         if vid_meta['video_fps'] != vfps or vid_meta['audio_fps'] != afps or min(H, W) != input_size:
-            # print(f'Reencoding. vfps: {vid_meta["video_fps"]} -> {vfps};', end=' ')
-            # print(f'afps: {vid_meta["audio_fps"]} -> {afps};', end=' ')
-            # print(f'{(H, W)} -> min(H, W)={input_size}')
             if args.time_stretch:
                 origin_path_reencode = reencode_video(origin_path, 62.5, afps, input_size)
             else:
                 origin_path_reencode = reencode_video(origin_path, vfps, afps, input_size)
         else:
-            # print(f'No need to reencode. vfps: {vid_meta["video_fps"]}; afps: {vid_meta["audio_fps"]}; min(H, W)={input_size}')
             pass
 
         # load visual and audio streams
@@ -207,25 +202,35 @@ def predict_best_sync(exp_name, multiple_audio_path, vfps, afps, device, input_s
                 
                 # sanity check: we will take the input to the `model` and recontruct make a video from it.
                 # Use this check to make sure the input makes sense (audio should be ok but shifted as you specified)
-                reconstruct_video_from_input(aud, vid, batch['meta'], origin_path_reencode, v_start_i_sec, offset_sec, vfps, afps)
+                # reconstruct_video_from_input(aud, vid, batch['meta'], origin_path_reencode, v_start_i_sec, offset_sec, vfps, afps)
                 # forward pass
                 with torch.no_grad():
                     _, off_logits, attention = model(vid, aud, targets)
                 # simply prints the results of the prediction
                 top_prob, top_shift = decode_single_video_best_prediction_clean(off_logits, grid, item)
-                if abs(top_shift) <= args.tolerance and top_prob > cur_prob:
-                    best_sync_idx = idx
-                    cur_prob = top_prob
-                    min_shift = top_shift
-                    # to_record = True
+                if exp_name == '22-09-21T21-00-52':
+                    if abs(top_shift) <= args.tolerance and top_prob > cur_prob:
+                        best_sync_idx = idx
+                        cur_prob = top_prob
+                        min_shift = top_shift
+                        # to_record = True
+                elif exp_name == '22-08-18T09-44-31':
+                    if abs(top_shift) < abs(min_shift):
+                        best_sync_idx = idx
+                        cur_prob = top_prob
+                        min_shift = top_shift
+                    elif abs(top_shift) == abs(min_shift) and top_prob > cur_prob:
+                        best_sync_idx = idx
+                        cur_prob = top_prob
+                        min_shift = top_shift
                 pbar.set_description_str(f'idx: {idx}, cur prob: {top_prob:.2f}, cur shift: {top_shift:.2f}, best prob: {cur_prob:.2f} min shift: {min_shift:2f}')
                 # if to_record:
                 #     attach_audio_to_video(rgb.detach().permute(0,2,3,1).cpu().numpy(), wav.detach().cpu().numpy(), os.path.join(os.path.dirname(multiple_audio_path), Path(origin_path).stem + '_to_' + Path(cond_path).stem + f'_{idx}_{top_prob:.2f}_{top_shift:.2f}_sync.mp4'), FPS=vfps, SR=afps)
                 # break
             # print(best_sync_idx)
             attach_audio_to_video(origin_path, audios[best_sync_idx], os.path.join(dest_dir, Path(origin_path).stem + '_to_' + Path(cond_path).stem + '.mp4'), SR=22050)
-            # break
-        # break
+            break
+        break
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-t', '--tolerance', type=float, default=1e-5)
@@ -237,7 +242,7 @@ parser.add_argument('--dest_dir', type=str, default=None)
 
 if __name__ == '__main__':
     args = parser.parse_args()
-    exp_name = '22-09-21T21-00-52'
+    exp_name = '22-08-18T09-44-31'
     # vid_path = './data/vggsound/h264_video_25fps_256side_16000hz_aac/3qesirWAGt4_20000_30000.mp4'  # dog barking
     device = f'cuda:{args.device}'
     # target values for an input video (the video will be reencoded to match these)
