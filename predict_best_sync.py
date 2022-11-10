@@ -254,4 +254,4 @@ if __name__ == '__main__':
     offset_sec = 0.0  # how early audio should start than the visual track
 
     # example(exp_name, vid_path, vfps, afps, device, input_size, v_start_i_sec, offset_sec)
-    predict_best_sync(exp_name, f'logs/CondAVTransformer_VNet_randshift_2s_GH_vqgan_no_earlystop_multiple/wavs/100_times_split_{args.split}_wav_dict.pt', vfps, afps, device, input_size, args)
+    predict_best_sync(exp_name, f'logs/CondAVTransformer_VNet_CXAV_2s_denoise_AST_predicted_50_percent_samecls_0906_multiple_tolerance/wavs/100_times_split_{args.split}_wav_dict.pt', vfps, afps, device, input_size, args)
