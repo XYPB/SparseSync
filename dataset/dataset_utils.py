@@ -66,7 +66,7 @@ def get_video_and_audio(path, get_meta=False, max_clip_len_sec=None):
     try:
         meta['audio_fps']
     except KeyError:
-        meta['audio_fps'] = 22050
+        meta['audio_fps'] = 16000
     meta = {
         'video': {'fps': [meta['video_fps']]},
         'audio': {'framerate': [meta['audio_fps']]},
