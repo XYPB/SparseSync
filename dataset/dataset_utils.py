@@ -63,6 +63,10 @@ def get_video_and_audio(path, get_meta=False, max_clip_len_sec=None):
     # (Ta) <- (Ca, Ta)
     audio = audio.mean(dim=0)
     # FIXME: this is legacy format of `meta` as it used to be loaded by VideoReader.
+    try:
+        meta['audio_fps']
+    except KeyError:
+        meta['audio_fps'] = 22050
     meta = {
         'video': {'fps': [meta['video_fps']]},
         'audio': {'framerate': [meta['audio_fps']]},
