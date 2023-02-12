@@ -3,6 +3,7 @@ import os
 import argparse
 from pathlib import Path
 import soundfile as sf
+import numpy as np
 import torch
 import torchaudio
 import torchvision
@@ -144,6 +145,11 @@ def predict_best_sync(exp_name, multiple_audio_path, vfps, afps, device, input_s
     if dest_dir == None:
         dest_dir = os.path.dirname(multiple_audio_path)
     os.makedirs(dest_dir, exist_ok=True)
+    if args.scale != 1:
+        folder = f'full_generated_video_scale{args.scale:.1f}'
+    else:
+        folder = 'full_generated_video'
+    os.makedirs(os.path.join(dest_dir, folder), exist_ok=True)
 
     generated_audios = torch.load(multiple_audio_path)
     pbar = tqdm(generated_audios.items(), total=len(generated_audios))
@@ -171,6 +177,9 @@ def predict_best_sync(exp_name, multiple_audio_path, vfps, afps, device, input_s
             cur_prob = -1
             for idx, wav in enumerate(audios):
                 # to_record = False
+                # scale
+                wav = args.scale * wav
+                wav = np.clip(wav, -1.0, 1.0)
                 if args.time_stretch:
                     wav = time_stretch(wav, rate=0.4)
                 wav = torch.FloatTensor(wav).squeeze(0)
@@ -228,7 +237,7 @@ def predict_best_sync(exp_name, multiple_audio_path, vfps, afps, device, input_s
                 #     attach_audio_to_video(rgb.detach().permute(0,2,3,1).cpu().numpy(), wav.detach().cpu().numpy(), os.path.join(os.path.dirname(multiple_audio_path), Path(origin_path).stem + '_to_' + Path(cond_path).stem + f'_{idx}_{top_prob:.2f}_{top_shift:.2f}_sync.mp4'), FPS=vfps, SR=afps)
                 # break
             # print(best_sync_idx)
-            attach_audio_to_video(origin_path, audios[best_sync_idx], os.path.join(dest_dir, Path(origin_path).stem + '_to_' + Path(cond_path).stem + '.mp4'), SR=22050)
+            attach_audio_to_video(origin_path, audios[best_sync_idx], os.path.join(dest_dir, folder, Path(origin_path).stem + '_to_' + Path(cond_path).stem + '.mp4'), SR=22050)
             # break
         # break
 
@@ -237,12 +246,15 @@ parser.add_argument('-t', '--tolerance', type=float, default=1e-5)
 parser.add_argument('--time_stretch', action='store_true')
 parser.add_argument('-d', '--device', type=int, default=0)
 parser.add_argument('--split', type=int, default=0)
-parser.add_argument('--dest_dir', type=str, default=None)
+parser.add_argument('--cnt', type=int, default=25)
+parser.add_argument('--scale', type=float, default=1)
+parser.add_argument('--dest_dir', type=str, default='logs/CondAVTransformer_VNet_CXAV_2s_denoise_AST_predicted_50_percent_samecls_0906_multiple_tolerance')
 
 
 if __name__ == '__main__':
     args = parser.parse_args()
-    exp_name = '22-08-18T09-44-31'
+    # exp_name = '22-08-18T09-44-31'
+    exp_name = '22-09-21T21-00-52'
     # vid_path = './data/vggsound/h264_video_25fps_256side_16000hz_aac/3qesirWAGt4_20000_30000.mp4'  # dog barking
     device = f'cuda:{args.device}'
     # target values for an input video (the video will be reencoded to match these)
@@ -254,4 +266,4 @@ if __name__ == '__main__':
     offset_sec = 0.0  # how early audio should start than the visual track
 
     # example(exp_name, vid_path, vfps, afps, device, input_size, v_start_i_sec, offset_sec)
-    predict_best_sync(exp_name, f'logs/CondAVTransformer_VNet_CXAV_2s_denoise_AST_predicted_50_percent_samecls_0906_multiple_tolerance/wavs/100_times_split_{args.split}_wav_dict.pt', vfps, afps, device, input_size, args)
+    predict_best_sync(exp_name, os.path.join(args.dest_dir, f'{args.cnt}_times_split_{args.split}_wav_dict.pt'), vfps, afps, device, input_size, args)
